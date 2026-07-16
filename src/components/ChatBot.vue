@@ -48,6 +48,33 @@ async function sendMessage() {
   await scrollBottom();
 }
 
+function askThisMonthFestival() {
+
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  quickQuestion(`${year}년 ${month}월 부산 축제 알려줘`);
+
+}
+
+function askNextMonthFestival() {
+
+  const now = new Date();
+
+  let year = now.getFullYear();
+  let month = now.getMonth() + 2;
+
+  if (month > 12) {
+    month = 1;
+    year++;
+  }
+
+  quickQuestion(`${year}년 ${month}월 부산 축제 알려줘`);
+
+}
+
 async function quickQuestion(text) {
   input.value = text;
   await sendMessage();
@@ -119,13 +146,13 @@ async function scrollBottom() {
   <!-- 축제 메뉴 -->
   <div class="quick-menu" v-if="menu==='festival'">
 
-    <button @click="quickQuestion('이번 달 부산 축제 알려줘')">
-      📅 이번 달
-    </button>
+    <button @click="askThisMonthFestival()">
+    📅 이번 달
+        </button>
 
-    <button @click="quickQuestion('다음 달 부산 축제 알려줘')">
-      🗓 다음 달
-    </button>
+    <button @click="askNextMonthFestival()">
+    🗓 다음 달
+        </button>
 
     <button @click="quickQuestion('부산 축제 전체 알려줘')">
       📋 전체 축제
