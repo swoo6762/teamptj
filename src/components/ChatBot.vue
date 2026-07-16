@@ -3,18 +3,21 @@ import { ref, nextTick } from "vue";
 import { askGPT } from "../services/openai";
 
 const input = ref("");
+const menu = ref("main");
+const history = ref(null);
 
 const messages = ref([
   {
     role: "assistant",
-    text: "안녕하세요! 😊 LocalHub 부산 관광 챗봇입니다.\n부산 관광지, 축제, 숙박 등에 대해 질문해보세요."
+    text: `안녕하세요 😊
+
+LocalHub 부산 관광 챗봇입니다.
+
+원하는 메뉴를 선택해주세요.`
   }
 ]);
 
-const history = ref(null);
-
 async function sendMessage() {
-
   if (!input.value.trim()) return;
 
   const question = input.value;
@@ -26,40 +29,36 @@ async function sendMessage() {
 
   input.value = "";
 
-  scrollBottom();
+  await scrollBottom();
 
   try {
-
     const answer = await askGPT(question);
 
     messages.value.push({
       role: "assistant",
       text: answer
     });
-
   } catch (e) {
-
     messages.value.push({
       role: "assistant",
-      text: "죄송합니다. 응답을 가져오지 못했습니다."
+      text: "죄송합니다. 오류가 발생했습니다."
     });
-
   }
 
-  scrollBottom();
-
+  await scrollBottom();
 }
 
-async function scrollBottom(){
+async function quickQuestion(text) {
+  input.value = text;
+  await sendMessage();
+}
 
+async function scrollBottom() {
   await nextTick();
 
-  if(history.value){
-
+  if (history.value) {
     history.value.scrollTop = history.value.scrollHeight;
-
   }
-
 }
 </script>
 
@@ -67,40 +66,91 @@ async function scrollBottom(){
 
 <div class="chat">
 
-    <div class="header">
-        🤖 LocalHub 부산 챗봇
+  <!-- 헤더 -->
+  <div class="header">
+    🤖 LocalHub 부산 챗봇
+  </div>
+
+  <!-- 채팅창 -->
+  <div class="history" ref="history">
+
+    <div
+      v-for="(m,index) in messages"
+      :key="index"
+      class="message"
+      :class="m.role"
+    >
+      <div class="bubble">
+        {{ m.text }}
+      </div>
     </div>
 
-    <div class="history" ref="history">
+  </div>
 
-        <div
-            v-for="(m,index) in messages"
-            :key="index"
-            class="message"
-            :class="m.role"
-        >
+  <!-- 메인 메뉴 -->
+  <div class="quick-menu" v-if="menu==='main'">
 
-            <div class="bubble">
-                {{m.text}}
-            </div>
+    <button @click="menu='festival'">
+      🎉 부산 축제
+    </button>
 
-        </div>
+    <button @click="quickQuestion('부산 관광지 추천해줘')">
+      🏝 관광지
+    </button>
 
-    </div>
+    <button @click="quickQuestion('부산 숙박 추천해줘')">
+      🏨 숙박
+    </button>
 
-    <div class="input-area">
+    <button @click="quickQuestion('부산 문화시설 추천해줘')">
+      🎭 문화시설
+    </button>
 
-        <input
-            v-model="input"
-            @keyup.enter="sendMessage"
-            placeholder="부산 관광지를 물어보세요..."
-        >
+    <button @click="quickQuestion('부산 레포츠 추천해줘')">
+      ⚽ 레포츠
+    </button>
 
-        <button @click="sendMessage">
-            전송
-        </button>
+    <button @click="quickQuestion('부산 쇼핑 추천해줘')">
+      🛍 쇼핑
+    </button>
 
-    </div>
+  </div>
+
+  <!-- 축제 메뉴 -->
+  <div class="quick-menu" v-if="menu==='festival'">
+
+    <button @click="quickQuestion('이번 달 부산 축제 알려줘')">
+      📅 이번 달
+    </button>
+
+    <button @click="quickQuestion('다음 달 부산 축제 알려줘')">
+      🗓 다음 달
+    </button>
+
+    <button @click="quickQuestion('부산 축제 전체 알려줘')">
+      📋 전체 축제
+    </button>
+
+    <button @click="menu='main'">
+      ⬅ 메인으로
+    </button>
+
+  </div>
+
+  <!-- 입력창 -->
+  <div class="input-area">
+
+    <input
+      v-model="input"
+      @keyup.enter="sendMessage"
+      placeholder="질문을 입력하세요..."
+    />
+
+    <button @click="sendMessage">
+      전송
+    </button>
+
+  </div>
 
 </div>
 
@@ -109,207 +159,108 @@ async function scrollBottom(){
 <style scoped>
 
 .chat{
-
-    position:fixed;
-
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -50%);
-
-    width:700px;
-    height:800px;
-
-    display:flex;
-    flex-direction:column;
-
-    background:white;
-
-    border-radius:20px;
-
-    box-shadow:0 15px 45px rgba(0,0,0,.2);
-
-    overflow:hidden;
-
+width:700px;
+height:800px;
+margin:150px auto;
+display:flex;
+flex-direction:column;
+background:white;
+border-radius:20px;
+overflow:hidden;
+box-shadow:0 15px 45px rgba(0,0,0,.2);
 }
 
 .header{
+background:#0A84FF;
+color:white;
+padding:20px;
+font-size:22px;
+font-weight:bold;
+text-align:center;
+}
 
-    background:#0A84FF;
+.quick-menu{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+padding:15px;
+background:#f7f7f7;
+border-top:1px solid #ddd;
+}
 
-    color:white;
-
-    padding:20px;
-
-    font-size:22px;
-
-    font-weight:bold;
-
-    text-align:center;
-
+.quick-menu button{
+flex:1 1 calc(50% - 10px);
+padding:12px;
+border:none;
+border-radius:10px;
+background:#0A84FF;
+color:white;
+cursor:pointer;
 }
 
 .history{
-
     flex:1;
-
     overflow-y:auto;
-
     background:#f5f7fb;
+    
+    display:flex;
+    flex-direction:column;
 
-    padding:25px;
 
+    padding:50px 25px 25px;
 }
 
 .message{
-
-    display:flex;
-
-    margin-bottom:18px;
-
+display:flex;
+margin-bottom:15px;
 }
 
 .user{
-
-    justify-content:flex-end;
-
+justify-content:flex-end;
 }
 
 .assistant{
-
-    justify-content:flex-start;
-
+justify-content:flex-start;
 }
 
 .bubble{
-
-    max-width:75%;
-
-    padding:14px 18px;
-
-    border-radius:20px;
-
-    white-space:pre-wrap;
-
-    line-height:1.7;
-
-    font-size:16px;
-
-    word-break:break-word;
-
+padding:14px;
+border-radius:18px;
+max-width:75%;
+white-space:pre-wrap;
 }
 
 .user .bubble{
-
-    background:#0A84FF;
-
-    color:white;
-
-    border-bottom-right-radius:6px;
-
+background:#0A84FF;
+color:white;
 }
 
 .assistant .bubble{
-
-    background:white;
-
-    border:1px solid #ddd;
-
-    border-bottom-left-radius:6px;
-
+background:white;
+border:1px solid #ddd;
+text-align:center;
 }
 
 .input-area{
-
-    display:flex;
-
-    gap:12px;
-
-    padding:18px;
-
-    border-top:1px solid #eee;
-
-    background:white;
-
+display:flex;
+padding:15px;
+gap:10px;
 }
 
 .input-area input{
-
-    flex:1;
-
-    padding:14px 18px;
-
-    border-radius:25px;
-
-    border:1px solid #ccc;
-
-    outline:none;
-
-    font-size:16px;
-
+flex:1;
+padding:12px;
+border-radius:20px;
+border:1px solid #ccc;
 }
 
-.input-area input:focus{
-
-    border-color:#0A84FF;
-
-}
-
-button{
-
-    border:none;
-
-    background:#0A84FF;
-
-    color:white;
-
-    border-radius:25px;
-
-    padding:14px 24px;
-
-    font-size:15px;
-
-    font-weight:bold;
-
-    cursor:pointer;
-
-    transition:.2s;
-
-}
-
-button:hover{
-
-    background:#006ddf;
-
-}
-
-@media(max-width:900px){
-
-.chat{
-
-    width:95%;
-
-    height:90%;
-
-}
-
-}
-
-@media(max-width:600px){
-
-.chat{
-
-    width:100%;
-
-    height:100%;
-
-    border-radius:0;
-
-    top:0;
-    left:0;
-    transform:none;
-
-}
-
+.input-area button{
+padding:12px 20px;
+border:none;
+background:#0A84FF;
+color:white;
+border-radius:20px;
+cursor:pointer;
 }
 
 </style>
